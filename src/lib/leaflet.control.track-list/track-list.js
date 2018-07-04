@@ -199,7 +199,7 @@ L.Control.TrackList = L.Control.extend({
             }
             var track = this.addTrack({name: name}),
                 line = this.addTrackSegment(track);
-            this.startEditTrackSegement(track, line);
+            this.startEditTrackSegment(track, line);
             line.startDrawingLine();
             return track;
         },
@@ -417,7 +417,7 @@ L.Control.TrackList = L.Control.extend({
             }
             this.stopPlacingPoint();
             var polyline = this.addTrackSegment(track, []);
-            this.startEditTrackSegement(track, polyline);
+            this.startEditTrackSegment(track, polyline);
             polyline.startDrawingLine(1);
         },
 
@@ -448,7 +448,7 @@ L.Control.TrackList = L.Control.extend({
             this.deleteTrackSegment(trackSegment);
             var newTrackSegment = this.addTrackSegment(trackSegment._parentTrack, latlngs);
             if (isEdited) {
-                this.startEditTrackSegement(trackSegment._parentTrack, newTrackSegment);
+                this.startEditTrackSegment(trackSegment._parentTrack, newTrackSegment);
             }
         },
 
@@ -550,12 +550,12 @@ L.Control.TrackList = L.Control.extend({
                 L.DomEvent.stopPropagation(e);
                 this.joinTrackSegments(trackSegment);
             } else {
-                this.startEditTrackSegement(track, trackSegment);
+                this.startEditTrackSegment(track, trackSegment);
                 L.DomEvent.stopPropagation(e);
             }
         },
 
-        startEditTrackSegement: function(track, polyline) {
+        startEditTrackSegment: function(track, polyline) {
             if (this._editedLine && this._editedLine !== polyline) {
                 this.stopEditLine();
             }
@@ -844,7 +844,7 @@ L.Control.TrackList = L.Control.extend({
             this.deleteTrackSegment(trackSegment);
             var segment1 = this.addTrackSegment(trackSegment._parentTrack, latlngs1);
             this.addTrackSegment(trackSegment._parentTrack, latlngs2);
-            this.startEditTrackSegement(trackSegment._parentTrack, segment1);
+            this.startEditTrackSegment(trackSegment._parentTrack, segment1);
         },
 
         deleteTrackSegment: function(trackSegment) {
