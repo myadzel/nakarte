@@ -21,6 +21,8 @@ function enableConfig(control, {layers, customLayersOrder}) {
             _allLayers: [].concat(...layers.map(group => group.layers)),
             _customLayers: ko.observableArray(),
 
+            activeWindow: null,
+
             onAdd: function(map) {
                 const container = originalOnAdd.call(this, map);
                 this.__injectConfigButton();
@@ -73,8 +75,23 @@ function enableConfig(control, {layers, customLayersOrder}) {
                 this.updateEnabledLayers();
             },
 
+            bindOnKeyDown: function () {
+                L.DomEvent.on(document, 'keydown', this.onKeyDown, this);
+            },
+
+            unbindOnKeyDown: function () {
+                L.DomEvent.off(document, 'keydown', this.onKeyDown);
+            },
+
+            onKeyDown: function (e) {
+                if (e.keyCode === 27) {
+                    this.hideSelectWindow();
+                    this.hideCustomLayerForm();
+                }
+            },
+
             _onConfigButtonClick: function() {
-                this.showLayersSelectWindow()
+                this.showLayersSelectWindow();
             },
 
             _initLayersSelectWindow: function() {
@@ -118,24 +135,27 @@ function enableConfig(control, {layers, customLayersOrder}) {
 </div>
                 `;
                 ko.applyBindings(this, container);
+                this.bindOnKeyDown();
             },
 
             showLayersSelectWindow: function() {
-                if (this._configWindowVisible || this._customLayerWindow) {
+                if (this.activeWindow) {
                     return;
                 }
                 [...this._allLayers, ...this._customLayers()].forEach(layer => layer.checked(layer.enabled));
                 this._initLayersSelectWindow();
                 this._map._controlContainer.appendChild(this._configWindow);
-                this._configWindowVisible = true;
+                this.bindOnKeyDown();
+                this.activeWindow = 'config';
             },
 
             hideSelectWindow: function() {
-                if (!this._configWindowVisible) {
+                if (this.activeWindow != 'config') {
                     return;
                 }
                 this._map._controlContainer.removeChild(this._configWindow);
-                this._configWindowVisible = false;
+                this.unbindOnKeyDown();
+                this.activeWindow = null;
             },
 
             onSelectWindowCancelClicked: function() {
@@ -243,7 +263,7 @@ function enableConfig(control, {layers, customLayersOrder}) {
             },
 
             showCustomLayerForm: function(buttons, fieldValues) {
-                if (this._customLayerWindow || this._configWindowVisible) {
+                if (this.activeWindow) {
                     return;
                 }
                 this._customLayerWindow =
@@ -303,6 +323,8 @@ function enableConfig(control, {layers, customLayersOrder}) {
 
                 form.innerHTML = formHtml.join('');
                 ko.applyBindings(dialogModel, form);
+                this.bindOnKeyDown();
+                this.activeWindow = 'custom';
             },
 
             _addItem: function(obj) {
@@ -349,11 +371,11 @@ function enableConfig(control, {layers, customLayersOrder}) {
             },
 
             checkCustomLayerValues: function(fieldValues) {
-                if (!fieldValues.url) {
-                    return {'error': 'Url is empty'}
-                }
                 if (!fieldValues.name) {
-                    return {'error': 'Name is empty'}
+                    return {'error': 'Layer name is empty'}
+                }
+                if (!fieldValues.url) {
+                    return {'error': 'Tile url template is empty'}
                 }
                 return {};
             },
@@ -418,11 +440,12 @@ function enableConfig(control, {layers, customLayersOrder}) {
             },
 
             hideCustomLayerForm: function() {
-                if (!this._customLayerWindow) {
+                if (this.activeWindow != 'custom') {
                     return;
                 }
                 this._customLayerWindow.parentNode.removeChild(this._customLayerWindow);
-                this._customLayerWindow = null;
+                this.unbindOnKeyDown();
+                this.activeWindow = null;
             },
 
             onCustomLayerEditClicked: function(layer, e) {
