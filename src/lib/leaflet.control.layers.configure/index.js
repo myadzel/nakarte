@@ -6,6 +6,10 @@ import {notify} from '~/lib/notifications';
 import * as logging from '~/lib/logging';
 import safeLocalStorage from '~/lib/safe-localstorage';
 import './customLayer';
+import {
+    getLayerHotkey,
+    saveLayerHotkeysToStorage
+} from "../leaflet.control.layers.hotkeys";
 
 function enableConfig(control, {layers, customLayersOrder}) {
     const originalOnAdd = control.onAdd;
@@ -69,6 +73,7 @@ function enableConfig(control, {layers, customLayersOrder}) {
                     }
                     layer.enabled = enabled;
                     layer.checked = ko.observable(enabled);
+                    layer.hotkey = getLayerHotkey(layer.layer);
                     layer.description = layer.description || '';
                 }
                 this.updateEnabledLayers();
@@ -94,11 +99,12 @@ function enableConfig(control, {layers, customLayersOrder}) {
         <!-- ko foreach: _allLayersGroups -->
             <div class="section-header" data-bind="html: group"></div>
             <!-- ko foreach: layers -->
-                <label>
-                    <input type="checkbox" data-bind="checked: checked"/>
-                    <span data-bind="text: title">
-                    </span><!--  ko if: description -->
-                    <span data-bind="html: description || ''"></span>
+                <label class="label">
+                    <input class="checkbox" type="checkbox" data-bind="checked: checked"/>
+                    <span data-bind="text: title"></span>
+                    <input type="text" class="hotkey-input" size="1" maxlength="1" data-bind="value: hotkey" />
+                    <!--  ko if: description -->
+                    <span class="description" data-bind="html: description || ''"></span>
                     <!-- /ko -->
                 </label>
             <!-- /ko -->
@@ -131,6 +137,16 @@ function enableConfig(control, {layers, customLayersOrder}) {
                 this._configWindowVisible = true;
             },
 
+            saveHotkeys: function() {
+                const layersHotkeys = {};
+                this._allLayers.forEach((layer) => {
+                    if (layer.hotkey?.length) {
+                        layersHotkeys[layer.layer.options.code] = layer.hotkey;
+                    }
+                });
+                saveLayerHotkeysToStorage(layersHotkeys);
+            },
+
             hideSelectWindow: function() {
                 if (!this._configWindowVisible) {
                     return;
@@ -153,6 +169,7 @@ function enableConfig(control, {layers, customLayersOrder}) {
             onSelectWindowOkClicked: function() {
                 const newEnabledLayers = [];
                 for (let layer of [...this._allLayers, ...this._customLayers()]) {
+                    layer.layer.options.hotkey = getLayerHotkey(layer);
                     if (layer.checked()) {
                         if (!layer.enabled) {
                             newEnabledLayers.push(layer);
@@ -162,6 +179,7 @@ function enableConfig(control, {layers, customLayersOrder}) {
                         layer.enabled = false;
                     }
                 }
+                this.saveHotkeys();
                 this.updateEnabledLayers(newEnabledLayers);
                 this.hideSelectWindow();
             },
